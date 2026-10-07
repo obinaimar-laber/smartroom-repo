@@ -66,6 +66,6 @@ desktop.ini
 backup_*.json
 
 # ---------- Sphinx Documentation ----------
-docs/_build/
-docs/_autosummary/
+docs/build/
+docs/source/_autosummary/
 *.pyc
