@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Room - Interactive Translator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 50px 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+        .logo {
+            font-size: 64px;
+            margin-bottom: 10px;
+        }
+        h1 {
+            font-size: 28px;
+            color: #1f2937;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .subtitle {
+            color: #6b7280;
+            font-size: 15px;
+            margin-bottom: 40px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 18px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 14px;
+            text-decoration: none;
+            color: white;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+        .btn-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .btn-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .btn-desc {
+            font-size: 12px;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+        .btn-create {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        .btn-join {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .btn-video {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+        .loading {
+            display: none;
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+        .error {
+            display: none;
+            color: #dc2626;
+            font-size: 14px;
+            margin-top: 16px;
+            padding: 12px;
+            background: #fee2e2;
+            border-radius: 8px;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎙️</div>
+        <h1>Smart Room</h1>
+        <p class="subtitle">Interactive Translator untuk Kelas Multibahasa</p>
+
+        <button class="btn btn-create" onclick="createRoom()" id="btnCreate">
+            <span class="btn-icon">🎙️</span>
+            <span class="btn-text">
+                <span class="btn-title">Create Room</span>
+                <span class="btn-desc">Mulai sebagai Host / Pembicara</span>
+            </span>
+        </button>
+
+        <a href="/join" class="btn btn-join">
+            <span class="btn-icon">🎧</span>
+            <span class="btn-text">
+                <span class="btn-title">Join Room</span>
+                <span class="btn-desc">Masuk sebagai Audience / Pendengar</span>
+            </span>
+        </a>
+
+        <a href="/video" class="btn btn-video">
+            <span class="btn-icon">🎬</span>
+            <span class="btn-text">
+                <span class="btn-title">Video Translate</span>
+                <span class="btn-desc">Terjemahkan file audio / video</span>
+            </span>
+        </a>
+
+        <div class="loading" id="loading">⏳ Membuat room...</div>
+        <div class="error" id="error"></div>
+
+        <div class="footer">
+            Smart Room v0.2 · International Team
+        </div>
+    </div>
+
+    <script>
+        async function createRoom() {
+            const btn = document.getElementById('btnCreate');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+
+            // Reset UI
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            loading.style.display = 'block';
+            error.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/rooms', { method: 'POST' });
+
+                if (!res.ok) {
+                    throw new Error('Gagal membuat room: ' + res.status);
+                }
+
+                const data = await res.json();
+                console.log('Room created:', data.code);
+
+                // Redirect ke halaman host dengan kode room
+                window.location.href = `/host?code=${data.code}`;
+
+            } catch (e) {
+                console.error(e);
+                error.textContent = '❌ ' + e.message;
+                error.style.display = 'block';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

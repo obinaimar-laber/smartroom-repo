@@ -1,0 +1,91 @@
+# ================================================================
+# DOCKER COMPOSE - SMART ROOM
+# ================================================================
+# Services:
+#   1. whisper  -> Speech-to-Text (Whisper ASR)
+#   2. backend  -> FastAPI + NLLB (translator + WebSocket)
+#
+# Network:
+#   smartroom-net -> internal network untuk komunikasi antar service
+# ================================================================
+
+services:
+
+  # ============================================================
+  # SERVICE 1: WHISPER
+  # ============================================================
+  # Fungsi : Menerima audio, convert ke teks (speech-to-text)
+  # Image  : onerahmet/openai-whisper-asr-webservice:latest-gpu
+  # Port   : 9000
+  # GPU    : Ya (butuh CUDA)
+  # Model  : small
+  # ============================================================
+  whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest-gpu
+    container_name: whisper
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./audio:/data
+      - ./models/whisper:/root/.cache/whisper
+    environment:
+      - ASR_MODEL=small
+      - ASR_ENGINE=openai_whisper
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - smartroom-net
+    restart: unless-stopped
+
+  # ============================================================
+  # SERVICE 2: BACKEND
+  # ============================================================
+  # Fungsi : FastAPI yang menjalankan NLLB + WebSocket
+  # Image  : smartroom-backend:v1 (build dari ./src/backend/Dockerfile)
+  # Port   : 8000
+  # GPU    : Ya (butuh CUDA untuk NLLB)
+  # Volume : src, models, output, audio
+  # ============================================================
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    image: smartroom-backend:v1
+    container_name: backend
+    ports:
+      - "8443:8000"
+    volumes:
+      - ./src:/app
+      - ./models:/root/.cache/huggingface
+      - ./output:/app/output
+      - ./audio:/app/audio
+      - ./certs:/app/certs
+    working_dir: /app/backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --ssl-keyfile /app/certs/key.pem --ssl-certfile /app/certs/cert.pem
+    environment:
+      - WHISPER_URL=http://whisper:9000/asr
+      - CUDA_VISIBLE_DEVICES=0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    depends_on:
+      - whisper
+    networks:
+      - smartroom-net
+    restart: unless-stopped
+
+# ================================================================
+# NETWORK
+# ================================================================
+networks:
+  smartroom-net:
+    driver: bridge

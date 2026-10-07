@@ -1,0 +1,66 @@
+# ============================================================
+# SMART ROOM - GITIGNORE
+# ============================================================
+
+# ---------- Python (source code TETAP di-push) ----------
+# Yang di-ignore cuma file otomatis/cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environment (BESAR, jangan di-push)
+env/
+venv/
+.venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# ---------- AI Models (BESAR, 600+ MB) ----------
+models/
+*.pt
+*.bin
+*.safetensors
+*.ckpt
+
+# ---------- Audio (BESAR) ----------
+audio/
+*.wav
+*.mp3
+*.webm
+*.m4a
+
+# ---------- Output (history, uploads, translations) ----------
+output/
+!output/.gitkeep
+
+# ---------- SSL Certificates (JANGAN commit private key!) ----------
+certs/
+*.pem
+*.key
+*.crt
+*.p12
+
+# ---------- Logs ----------
+*.log
+
+# ---------- IDE ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Backup files ----------
+*.tar
+*.zip
+*.rar
+backup_*.json

@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Room - Host</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+            color: #1f2937;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 24px; margin-bottom: 20px; color: #1f2937; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .hidden { display: none !important; }
+        .room-code {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: #2563eb;
+            font-family: 'Courier New', monospace;
+            margin: 8px 0;
+        }
+        .btn {
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover:not(:disabled) { background: #059669; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        .btn-secondary:hover:not(:disabled) { background: #d1d5db; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status-idle { background: #fef3c7; color: #92400e; }
+        .status-live { background: #fee2e2; color: #991b1b; animation: pulse 1.5s infinite; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        input, select {
+            padding: 10px 14px;
+            font-size: 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            width: 100%;
+            font-family: inherit;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        .meta b { color: #1f2937; }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .transcript {
+            background: #f9fafb;
+            border-left: 4px solid #2563eb;
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 6px;
+        }
+        .transcript .ts {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .transcript .speaker-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 6px;
+            color: #374151;
+            font-weight: 600;
+        }
+        .transcript .orig {
+            font-size: 15px;
+            color: #4b5563;
+            margin-bottom: 6px;
+            font-style: italic;
+        }
+        .transcript .trans-main {
+            background: #fef3c7;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border-left: 3px solid #f59e0b;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .transcript details {
+            margin-top: 8px;
+            font-size: 13px;
+        }
+        .transcript summary {
+            cursor: pointer;
+            color: #6b7280;
+            user-select: none;
+        }
+        .transcript .trans-other {
+            padding: 4px 0;
+            color: #4b5563;
+        }
+        .lang-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .audience-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .audience-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #dbeafe;
+            color: #1e40af;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .raise-hand-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .raise-hand-item .info { flex: 1; }
+        .raise-hand-item .name {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 2px;
+        }
+        .raise-hand-item .lang {
+            font-size: 12px;
+            color: #78716c;
+        }
+        .raise-hand-item .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .active-speaker-panel {
+            background: #fee2e2;
+            border-left: 4px solid #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .active-speaker-panel .info {
+            flex: 1;
+        }
+        .active-speaker-panel .label {
+            font-size: 12px;
+            color: #991b1b;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .active-speaker-panel .name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #7f1d1d;
+        }
+
+        .empty {
+            color: #9ca3af;
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: #1f2937;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            animation: slideIn 0.3s;
+            max-width: 300px;
+        }
+        .toast.error { background: #dc2626; }
+        .toast.success { background: #10b981; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎙️ Smart Room - Host</h1>
+
+    <!-- ==================== SETUP FORM ==================== -->
+    <div class="card" id="setupForm">
+        <h2 style="font-size: 18px; margin-bottom: 16px;">Setup Your Room</h2>
+
+        <div class="form-group">
+            <label for="hostName">Your Name</label>
+            <input type="text" id="hostName" placeholder="e.g., Mr. Smith" maxlength="30" value="Host" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="hostLang">Your Language (for speaking & seeing)</label>
+            <select id="hostLang">
+                <option value="id">🇮🇩 Indonesia</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="ru">🇷🇺 Russian</option>
+                <option value="zh">🇨🇳 Chinese</option>
+                <option value="es">🇪🇸 Spanish</option>
+                <option value="fa">🇮🇷 Persian</option>
+                <option value="vi">🇻🇳 Vietnamese</option>
+                <option value="bn">🇧🇩 Bengali</option>
+            </select>
+            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                You will speak and see translations in this language.
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="startRoom()" style="width: 100%;">
+            🚀 Create Room & Start
+        </button>
+    </div>
+
+    <!-- ==================== ROOM VIEW ==================== -->
+    <div id="roomView" class="hidden">
+
+        <!-- ROOM CODE -->
+        <div class="card">
+            <div style="font-size: 13px; color: #6b7280;">Room Code</div>
+            <div class="room-code" id="roomCode">----</div>
+            <div class="controls" style="margin-top: 8px;">
+                <button class="btn btn-secondary btn-sm" onclick="copyCode()">📋 Copy Code</button>
+                <button class="btn btn-secondary btn-sm" onclick="copyLink()">🔗 Copy Audience Link</button>
+                <button class="btn btn-danger btn-sm" onclick="closeRoom()" style="margin-left: auto;">🚪 Close Room</button>
+            </div>
+        </div>
+
+        <!-- META INFO -->
+        <div class="card">
+            <div class="meta">
+                <div>⏱️ Duration: <b id="duration">00:00:00</b></div>
+                <div>👥 Audiences: <b id="audienceCount">0</b></div>
+                <div>✋ Raised Hands: <b id="raisedCount">0</b></div>
+                <div>📝 Sentences: <b id="entryCount">0</b></div>
+            </div>
+        </div>
+
+        <!-- MIC CONTROL -->
+        <div class="card">
+            <div class="controls">
+                <button class="btn btn-primary" id="micBtn" onclick="toggleMic()">🎙️ Turn On Mic</button>
+                <span class="status status-idle" id="status">Ready</span>
+            </div>
+            <div style="font-size: 13px; color: #6b7280; margin-top: 8px;">
+                Click to start speaking. System will auto-detect sentences (1.5s pause) and translate.
+            </div>
+        </div>
+
+        <!-- ACTIVE SPEAKER -->
+        <div class="card hidden" id="activeSpeakerCard">
+            <div class="active-speaker-panel">
+                <div class="info">
+                    <div class="label">🎤 Currently Speaking</div>
+                    <div class="name" id="activeSpeakerName">-</div>
+                </div>
+                <button class="btn btn-danger" onclick="stopSpeaker()">⏹️ Stop Speaker</button>
+            </div>
+        </div>
+
+        <!-- RAISED HANDS -->
+        <div class="card">
+            <div style="font-weight: 600; margin-bottom: 12px;">
+                ✋ Raised Hands Queue (<span id="raisedQueueCount">0</span>)
+            </div>
+            <div id="raisedHandsList">
+                <div class="empty">No one has raised their hand yet</div>
+            </div>
+        </div>
+
+        <!-- AUDIENCES -->
+        <div class="card">
+            <div style="font-weight: 600; margin-bottom: 12px;">
+                👥 Audiences in Room (<span id="audienceCount2">0</span>)
+            </div>
+            <div id="audienceList" class="audience-list">
+                <div class="empty">No audiences yet</div>
+            </div>
+        </div>
+
+        <!-- TRANSCRIPT -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="font-weight: 600;">📝 Live Transcript</div>
+                <div>
+                    <button class="btn btn-secondary btn-sm" onclick="downloadHistory('txt')">📥 TXT</button>
+                    <button class="btn btn-secondary btn-sm" onclick="downloadHistory('json')">📥 JSON</button>
+                </div>
+            </div>
+            <div id="log" style="max-height: 500px; overflow-y: auto;">
+                <div class="empty">No transcript yet</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+let ws = null;
+let mediaRecorder = null;
+let audioContext = null;
+let analyser = null;
+let micStream = null;
+let isRecording = false;
+let startTime = null;
+let durationTimer = null;
+let reconnectTimer = null;
+let roomCode = '';
+let hostName = 'Host';
+let hostLang = 'id';
+
+// VAD settings
+const VAD_THRESHOLD = 0.025;
+const SILENCE_DURATION = 1500;
+const MAX_CHUNK_DURATION = 20000;
+const MIN_CHUNK_DURATION = 1500;
+
+let audioChunks = [];
+let silenceStart = null;
+let chunkStartTime = null;
+let vadCheckInterval = null;
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+    const params = new URLSearchParams(window.location.search);
+    roomCode = params.get('code') || '';
+
+    // Restore from localStorage
+    const savedName = localStorage.getItem('hostName');
+    const savedLang = localStorage.getItem('hostLang');
+    if (savedName) document.getElementById('hostName').value = savedName;
+    if (savedLang) document.getElementById('hostLang').value = savedLang;
+
+    if (!roomCode) {
+        // Buat room baru
+        try {
+            const res = await fetch('/api/rooms', { method: 'POST' });
+            const data = await res.json();
+            window.location.href = `/host?code=${data.code}`;
+        } catch (e) {
+            alert('Failed to create room: ' + e.message);
+        }
+    }
+}
+
+async function startRoom() {
+    hostName = document.getElementById('hostName').value.trim() || 'Host';
+    hostLang = document.getElementById('hostLang').value;
+
+    localStorage.setItem('hostName', hostName);
+    localStorage.setItem('hostLang', hostLang);
+
+    document.getElementById('setupForm').classList.add('hidden');
+    document.getElementById('roomView').classList.remove('hidden');
+    document.getElementById('roomCode').textContent = roomCode;
+
+    connectWebSocket();
+    startDurationTimer();
+}
+
+// ============================================================
+// WEBSOCKET
+// ============================================================
+function connectWebSocket() {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${proto}//${window.location.host}/ws/host/${roomCode}?lang=${hostLang}&name=${encodeURIComponent(hostName)}`;
+    console.log('Connecting:', url);
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+        console.log('WebSocket connected');
+        setStatus('Ready', 'idle');
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            handleMessage(msg);
+        } catch (e) {
+            console.error('Parse error:', e);
+        }
+    };
+
+    ws.onclose = () => {
+        console.log('WebSocket closed');
+        setStatus('Disconnected, reconnecting...', 'idle');
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connectWebSocket, 3000);
+    };
+
+    ws.onerror = (err) => console.error('WebSocket error:', err);
+}
+
+function handleMessage(msg) {
+    switch (msg.type) {
+        case 'connected':
+            console.log('Connected:', msg);
+            updateAudienceCount(msg.audiences || 0);
+            break;
+
+        case 'translation':
+            addTranscript(msg);
+            setStatus('Ready', 'idle');
+            break;
+
+        case 'audience_joined':
+            updateAudienceCount(msg.total_audiences);
+            refreshAudienceList();
+            toast(`👤 ${msg.name} joined (${msg.lang.toUpperCase()})`);
+            break;
+
+        case 'audience_left':
+            updateAudienceCount(msg.total_audiences);
+            refreshAudienceList();
+            break;
+
+        case 'audience_raised_hand':
+            toast(`✋ ${msg.name} raised hand`);
+            refreshRaisedHands();
+            break;
+
+        case 'audience_lowered_hand':
+            refreshRaisedHands();
+            break;
+
+        case 'speaker_approved_broadcast':
+            // Audience lain di-approve
+            document.getElementById('activeSpeakerCard').classList.remove('hidden');
+            document.getElementById('activeSpeakerName').textContent = msg.speaker_name;
+            // Matikan mic host otomatis
+            if (isRecording) {
+                stopMic();
+            }
+            refreshRaisedHands();
+            toast(`🎤 ${msg.speaker_name} is now speaking`);
+            break;
+
+        case 'speaker_stopped_broadcast':
+            // Audience berhenti bicara
+            document.getElementById('activeSpeakerCard').classList.add('hidden');
+            toast(`⏹️ ${msg.speaker_name} stopped speaking`);
+            break;
+
+        case 'host_speaking':
+            // Tidak perlu handle di host
+            break;
+
+        case 'room_closed':
+            toast('Room closed', 'error');
+            setTimeout(() => window.location.href = '/', 1500);
+            break;
+
+        case 'pong':
+            break;
+    }
+}
+
+// ============================================================
+// MIC CONTROL (VAD)
+// ============================================================
+async function toggleMic() {
+    if (isRecording) {
+        await stopMic();
+    } else {
+        await startMic();
+    }
+}
+
+async function startMic() {
+    try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true }
+        });
+
+        audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(micStream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+
+        isRecording = true;
+        document.getElementById('micBtn').textContent = '🔇 Turn Off Mic';
+        document.getElementById('micBtn').className = 'btn btn-danger';
+        setStatus('🎙️ Listening...', 'live');
+
+        // Notif ke backend
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'host_mic_on' }));
+        }
+
+        startVADLoop();
+    } catch (err) {
+        alert('Cannot access microphone: ' + err.message);
+    }
+}
+
+async function stopMic() {
+    isRecording = false;
+    if (vadCheckInterval) clearInterval(vadCheckInterval);
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+    if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+        micStream = null;
+    }
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+    }
+
+    document.getElementById('micBtn').textContent = '🎙️ Turn On Mic';
+    document.getElementById('micBtn').className = 'btn btn-primary';
+    setStatus('Ready', 'idle');
+
+    // Notif ke backend
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'host_mic_off' }));
+    }
+
+    // Kirim sisa buffer
+    if (audioChunks.length > 0) {
+        await sendChunk();
+    }
+}
+
+function startVADLoop() {
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    vadCheckInterval = setInterval(() => {
+        if (!isRecording || !analyser) return;
+        analyser.getByteTimeDomainData(dataArray);
+
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            const v = (dataArray[i] - 128) / 128;
+            sum += v * v;
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+        const now = Date.now();
+
+        if (rms > VAD_THRESHOLD) {
+            if (!chunkStartTime) {
+                chunkStartTime = now;
+                startRecording();
+            }
+            silenceStart = null;
+
+            if (now - chunkStartTime > MAX_CHUNK_DURATION) {
+                finishAndSendChunk();
+            }
+        } else {
+            if (chunkStartTime && !silenceStart) {
+                silenceStart = now;
+            } else if (silenceStart && (now - silenceStart) > SILENCE_DURATION) {
+                finishAndSendChunk();
+            }
+        }
+    }, 50);
+}
+
+function startRecording() {
+    const options = { mimeType: 'audio/webm;codecs=opus' };
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options.mimeType = 'audio/webm';
+    }
+
+    mediaRecorder = new MediaRecorder(micStream, options);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.start(100);
+}
+
+async function finishAndSendChunk() {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+
+    const duration = Date.now() - (chunkStartTime || Date.now());
+
+    const mr = mediaRecorder;
+    await new Promise(resolve => {
+        mr.onstop = resolve;
+        mr.stop();
+    });
+
+    chunkStartTime = null;
+    silenceStart = null;
+
+    if (duration < MIN_CHUNK_DURATION) {
+        console.log('Chunk too short, skipping');
+        audioChunks = [];
+        return;
+    }
+
+    if (audioChunks.length > 0) {
+        await sendChunk();
+    }
+}
+
+async function sendChunk() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    const arrayBuffer = await blob.arrayBuffer();
+
+    console.log(`Sending ${arrayBuffer.byteLength} bytes`);
+    ws.send(arrayBuffer);
+    setStatus('⏳ Processing...', 'processing');
+}
+
+// ============================================================
+// HOST CONTROLS
+// ============================================================
+function approveSpeaker(name) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'approve_speaker', target_name: name }));
+    toast(`✅ Approved: ${name}`, 'success');
+}
+
+function stopSpeaker() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'stop_speaker' }));
+}
+
+function closeRoom() {
+    if (!confirm('Close this room? All history will be lost.')) return;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'close_room' }));
+}
+
+// ============================================================
+// UI UPDATES
+// ============================================================
+function setStatus(text, type) {
+    const el = document.getElementById('status');
+    el.textContent = text;
+    el.className = `status status-${type}`;
+}
+
+function updateAudienceCount(count) {
+    document.getElementById('audienceCount').textContent = count;
+    document.getElementById('audienceCount2').textContent = count;
+}
+
+function addTranscript(msg) {
+    const log = document.getElementById('log');
+    if (log.querySelector('.empty')) log.innerHTML = '';
+
+    const div = document.createElement('div');
+    div.className = 'transcript';
+
+    const ts = new Date(msg.timestamp).toLocaleTimeString('en-US');
+    const speaker = msg.speaker || 'Host';
+    const isHost = speaker === hostName;
+
+    div.innerHTML = `
+        <div class="ts">${ts} <span class="speaker-badge">${isHost ? '🎙️' : '👤'} ${escapeHtml(speaker)}</span></div>
+        <div class="orig">"${escapeHtml(msg.original_text)}"</div>
+        <div class="trans-main">
+            <span class="lang-tag">${(msg.lang || 'id').toUpperCase()}</span>
+            ${escapeHtml(msg.translated_text)}
+        </div>
+    `;
+
+    log.insertBefore(div, log.firstChild);
+    log.scrollTop = 0;
+
+    const count = document.getElementById('entryCount');
+    count.textContent = parseInt(count.textContent || '0') + 1;
+
+    // Batasi 100 entries
+    while (log.children.length > 100) {
+        log.removeChild(log.lastChild);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
+async function refreshAudienceList() {
+    try {
+        const res = await fetch(`/api/rooms/${roomCode}`);
+        const data = await res.json();
+        const list = document.getElementById('audienceList');
+
+        if (!data.audiences || data.audiences.length === 0) {
+            list.innerHTML = '<div class="empty">No audiences yet</div>';
+        } else {
+            list.innerHTML = data.audiences.map(a =>
+                `<span class="audience-item">👤 ${escapeHtml(a.name)} <small>(${a.lang.toUpperCase()})</small></span>`
+            ).join('');
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function refreshRaisedHands() {
+    try {
+        const res = await fetch(`/api/rooms/${roomCode}`);
+        const data = await res.json();
+        const list = document.getElementById('raisedHandsList');
+        const count = document.getElementById('raisedCount');
+        const queueCount = document.getElementById('raisedQueueCount');
+
+        const raised = data.raised_hands_list || [];
+        count.textContent = raised.length;
+        queueCount.textContent = raised.length;
+
+        if (raised.length === 0) {
+            list.innerHTML = '<div class="empty">No one has raised their hand yet</div>';
+        } else {
+            list.innerHTML = raised.map(a => `
+                <div class="raise-hand-item">
+                    <div class="info">
+                        <div class="name">👤 ${escapeHtml(a.name)}</div>
+                        <div class="lang">Language: ${a.lang.toUpperCase()}</div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-success btn-sm" onclick="approveSpeaker('${escapeHtml(a.name)}')">✅ Approve</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function startDurationTimer() {
+    startTime = Date.now();
+    durationTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+        const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+        const s = String(elapsed % 60).padStart(2, '0');
+        document.getElementById('duration').textContent = `${h}:${m}:${s}`;
+    }, 1000);
+}
+
+function copyCode() {
+    navigator.clipboard.writeText(roomCode);
+    toast('Room code copied!');
+}
+
+function copyLink() {
+    const link = `${window.location.origin}/join?code=${roomCode}`;
+    navigator.clipboard.writeText(link);
+    toast('Audience link copied!');
+}
+
+function downloadHistory(format) {
+    window.open(`/api/rooms/${roomCode}/export?format=${format}`, '_blank');
+}
+
+function toast(message, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+// ============================================================
+// POLLING (setiap 5 detik, refresh raised hands & audiences)
+// ============================================================
+setInterval(() => {
+    if (roomCode && !document.getElementById('roomView').classList.contains('hidden')) {
+        refreshRaisedHands();
+        refreshAudienceList();
+    }
+}, 5000);
+
+// ============================================================
+// START
+// ============================================================
+init();
+</script>
+</body>
+</html>

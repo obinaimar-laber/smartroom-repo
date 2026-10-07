@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Room - Audience</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+            color: #1f2937;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 24px; margin-bottom: 20px; color: #1f2937; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .hidden { display: none !important; }
+
+        .btn {
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover:not(:disabled) { background: #059669; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover:not(:disabled) { background: #d97706; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        .btn-secondary:hover:not(:disabled) { background: #d1d5db; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        input, select {
+            padding: 10px 14px;
+            font-size: 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            width: 100%;
+            font-family: inherit;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status-connected { background: #d1fae5; color: #065f46; }
+        .status-waiting { background: #fef3c7; color: #92400e; }
+        .status-disconnected { background: #fee2e2; color: #991b1b; }
+        .status-speaking { background: #fee2e2; color: #991b1b; animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .info-bar {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .info-bar b { color: #1f2937; }
+
+        .lang-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #dbeafe;
+            color: #1e40af;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .raise-hand-panel {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .raise-hand-panel h3 {
+            font-size: 18px;
+            color: #92400e;
+            margin-bottom: 12px;
+        }
+        .raise-hand-panel p {
+            font-size: 14px;
+            color: #78716c;
+            margin-bottom: 16px;
+        }
+        .raise-hand-panel .btn { font-size: 16px; padding: 14px 28px; }
+
+        .speaking-panel {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .speaking-panel h3 {
+            font-size: 18px;
+            color: #991b1b;
+            margin-bottom: 8px;
+        }
+        .speaking-panel p {
+            font-size: 14px;
+            color: #7f1d1d;
+            margin-bottom: 16px;
+        }
+
+        .transcript {
+            background: #f9fafb;
+            border-left: 4px solid #2563eb;
+            padding: 14px 16px;
+            margin: 10px 0;
+            border-radius: 6px;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .transcript .ts {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+        .transcript .speaker-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 6px;
+            color: #374151;
+            font-weight: 600;
+        }
+        .transcript .orig {
+            font-size: 15px;
+            color: #4b5563;
+            margin-bottom: 8px;
+            font-style: italic;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #d1d5db;
+        }
+        .transcript .trans {
+            font-size: 18px;
+            color: #2563eb;
+            font-weight: 600;
+        }
+        .lang-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .empty {
+            color: #9ca3af;
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: #1f2937;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            animation: slideIn 0.3s;
+            max-width: 300px;
+        }
+        .toast.error { background: #dc2626; }
+        .toast.success { background: #10b981; }
+        .toast.warning { background: #f59e0b; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎧 Smart Room - Audience</h1>
+
+    <!-- ==================== JOIN FORM ==================== -->
+    <div class="card" id="joinForm">
+        <div class="form-group">
+            <label for="codeInput">Room Code</label>
+            <input type="text" id="codeInput" placeholder="e.g., a3f9" maxlength="10" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="nameInput">Your Name <span style="color: #dc2626;">*</span></label>
+            <input type="text" id="nameInput" placeholder="e.g., John Doe" maxlength="30" autocomplete="off" required>
+            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                Required. Will be shown to Host and other audiences.
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="langSelect">Your Language (for speaking & seeing)</label>
+            <select id="langSelect">
+                <option value="id">🇮🇩 Indonesia</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="ru">🇷🇺 Russian</option>
+                <option value="zh">🇨🇳 Chinese</option>
+                <option value="es">🇪🇸 Spanish</option>
+                <option value="fa">🇮🇷 Persian</option>
+                <option value="vi">🇻🇳 Vietnamese</option>
+                <option value="bn">🇧🇩 Bengali</option>
+            </select>
+            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                You will speak and see translations in this language.
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="joinRoom()" style="width: 100%;">
+            🚪 Join Room
+        </button>
+        <div id="joinError" style="color: #dc2626; margin-top: 12px; font-size: 14px;"></div>
+    </div>
+
+    <!-- ==================== ROOM VIEW ==================== -->
+    <div class="hidden" id="roomView">
+
+        <!-- INFO BAR -->
+        <div class="card">
+            <div class="info-bar">
+                <div>Room: <b id="roomCodeDisplay">----</b></div>
+                <div>You: <b id="nameDisplay">-</b></div>
+                <div>Lang: <span class="lang-badge" id="langDisplay">-</span></div>
+                <div>Status: <span class="status status-waiting" id="statusDisplay">Connecting...</span></div>
+                <div>👥 <b id="audienceCount">0</b></div>
+            </div>
+        </div>
+
+        <!-- RAISE HAND PANEL -->
+        <div class="raise-hand-panel" id="raiseHandPanel">
+            <h3>✋ Want to speak?</h3>
+            <p>Raise your hand to request permission from the Host.</p>
+            <button class="btn btn-warning" id="raiseHandBtn" onclick="raiseHand()">
+                ✋ Raise Hand
+            </button>
+            <button class="btn btn-secondary hidden" id="lowerHandBtn" onclick="lowerHand()" style="margin-top: 12px;">
+                ⏬ Lower Hand
+            </button>
+        </div>
+
+        <!-- SPEAKING PANEL (muncul saat di-approve) -->
+        <div class="speaking-panel hidden" id="speakingPanel">
+            <h3>🎤 You are now speaking!</h3>
+            <p>Host has approved you. Turn on your mic to speak.</p>
+            <button class="btn btn-success" id="micBtn" onclick="toggleMic()">
+                🎙️ Turn On Mic
+            </button>
+            <button class="btn btn-danger" id="stopSpeakBtn" onclick="stopSpeaking()" style="margin-top: 12px;">
+                ⏹️ Stop Speaking
+            </button>
+        </div>
+
+        <!-- TRANSCRIPT -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="font-weight: 600;">📝 Live Transcript</div>
+                <button class="btn btn-secondary btn-sm" onclick="downloadHistory()">📥 Download</button>
+            </div>
+            <div id="log" style="max-height: 600px; overflow-y: auto;">
+                <div class="empty">Waiting for Host to start speaking...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+let ws = null;
+let roomCode = '';
+let userName = '';
+let userLang = 'id';
+let reconnectTimer = null;
+let isHandRaised = false;
+let isApproved = false;
+
+// Mic
+let mediaRecorder = null;
+let audioContext = null;
+let analyser = null;
+let micStream = null;
+let isRecording = false;
+let audioChunks = [];
+let silenceStart = null;
+let chunkStartTime = null;
+let vadCheckInterval = null;
+
+// VAD settings
+const VAD_THRESHOLD = 0.025;
+const SILENCE_DURATION = 1500;
+const MAX_CHUNK_DURATION = 20000;
+const MIN_CHUNK_DURATION = 1500;
+
+const langNames = {
+    'id': '🇮🇩 Indonesia',
+    'en': '🇬🇧 English',
+    'ru': '🇷🇺 Russian',
+    'zh': '🇨🇳 Chinese',
+    'es': '🇪🇸 Spanish',
+    'fa': '🇮🇷 Persian',
+    'vi': '🇻🇳 Vietnamese',
+    'bn': '🇧🇩 Bengali',
+};
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+    const params = new URLSearchParams(window.location.search);
+    const codeFromUrl = params.get('code');
+    const langFromUrl = params.get('lang');
+
+    if (codeFromUrl) {
+        document.getElementById('codeInput').value = codeFromUrl.toLowerCase();
+    }
+    if (langFromUrl && langNames[langFromUrl]) {
+        document.getElementById('langSelect').value = langFromUrl;
+    }
+
+    // Auto-join kalau ada code di URL
+    if (codeFromUrl) {
+        setTimeout(() => {
+            // Cek apakah nama sudah diisi, kalau belum fokus ke input nama
+            const nameInput = document.getElementById('nameInput');
+            if (!nameInput.value.trim()) {
+                nameInput.focus();
+            } else {
+                joinRoom();
+            }
+        }, 100);
+    }
+}
+
+// ============================================================
+// JOIN ROOM
+// ============================================================
+async function joinRoom() {
+    roomCode = document.getElementById('codeInput').value.trim().toLowerCase();
+    userName = document.getElementById('nameInput').value.trim();
+    userLang = document.getElementById('langSelect').value;
+
+    const errEl = document.getElementById('joinError');
+    errEl.textContent = '';
+
+    // Validasi
+    if (!roomCode) {
+        errEl.textContent = 'Room code is required';
+        return;
+    }
+    if (!userName) {
+        errEl.textContent = 'Your name is required';
+        return;
+    }
+
+    // Cek room exists
+    try {
+        const res = await fetch(`/api/rooms/${roomCode}`);
+        if (!res.ok) {
+            errEl.textContent = 'Room not found. Check the code.';
+            return;
+        }
+    } catch (e) {
+        errEl.textContent = 'Cannot connect to server';
+        return;
+    }
+
+    // Simpan nama di localStorage
+    localStorage.setItem('audienceName', userName);
+
+    // Tampilkan room view
+    document.getElementById('joinForm').classList.add('hidden');
+    document.getElementById('roomView').classList.remove('hidden');
+    document.getElementById('roomCodeDisplay').textContent = roomCode;
+    document.getElementById('nameDisplay').textContent = userName;
+    document.getElementById('langDisplay').textContent = langNames[userLang] || userLang;
+
+    connectWebSocket();
+}
+
+// ============================================================
+// WEBSOCKET
+// ============================================================
+function connectWebSocket() {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${proto}//${window.location.host}/ws/audience/${roomCode}?lang=${userLang}&name=${encodeURIComponent(userName)}`;
+    console.log('Connecting:', url);
+
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+        console.log('WebSocket connected');
+        setStatus('Connected', 'connected');
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            handleMessage(msg);
+        } catch (e) {
+            console.error('Parse error:', e);
+        }
+    };
+
+    ws.onclose = () => {
+        console.log('WebSocket closed');
+        setStatus('Disconnected, reconnecting...', 'disconnected');
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connectWebSocket, 3000);
+    };
+
+    ws.onerror = (err) => console.error('WebSocket error:', err);
+}
+
+function handleMessage(msg) {
+    switch (msg.type) {
+        case 'connected':
+            console.log('Connected:', msg);
+            document.getElementById('audienceCount').textContent = msg.total_audiences;
+
+            if (msg.history && msg.history.length > 0) {
+                renderHistory(msg.history);
+            }
+            break;
+
+        case 'translation':
+            addTranscript(msg);
+            break;
+
+        case 'speaker_approved':
+            // Audience ini di-approve untuk bicara
+            isApproved = true;
+            isHandRaised = false;
+            document.getElementById('raiseHandPanel').classList.add('hidden');
+            document.getElementById('speakingPanel').classList.remove('hidden');
+            setStatus('You are speaking', 'speaking');
+            toast('✅ Host approved you. Turn on your mic!', 'success');
+            break;
+
+        case 'speaker_stopped':
+            // Audience ini di-stop oleh Host
+            isApproved = false;
+            if (isRecording) {
+                stopMic();
+            }
+            document.getElementById('speakingPanel').classList.add('hidden');
+            document.getElementById('raiseHandPanel').classList.remove('hidden');
+            document.getElementById('raiseHandBtn').classList.remove('hidden');
+            document.getElementById('lowerHandBtn').classList.add('hidden');
+            setStatus('Connected', 'connected');
+            toast('⏹️ Host stopped you', 'warning');
+            break;
+
+        case 'speaker_approved_broadcast':
+            // Audience LAIN di-approve
+            toast(`🎤 ${msg.speaker_name} is now speaking`);
+            break;
+
+        case 'speaker_stopped_broadcast':
+            // Audience LAIN berhenti bicara
+            toast(`⏹️ ${msg.speaker_name} stopped speaking`);
+            break;
+
+        case 'host_speaking':
+            if (msg.is_speaking) {
+                toast(`🎙️ Host is speaking...`);
+            }
+            break;
+
+        case 'room_closed':
+            toast('Room was closed by Host', 'error');
+            setTimeout(() => window.location.href = '/', 1500);
+            break;
+
+        case 'raise_hand_confirmed':
+            toast('✋ Hand raised. Waiting for Host...', 'warning');
+            break;
+
+        case 'lower_hand_confirmed':
+            toast('Hand lowered', 'success');
+            break;
+
+        case 'pong':
+            break;
+    }
+}
+
+// ============================================================
+// RAISE HAND
+// ============================================================
+function raiseHand() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (isHandRaised || isApproved) return;
+
+    isHandRaised = true;
+    ws.send(JSON.stringify({ type: 'raise_hand' }));
+
+    document.getElementById('raiseHandBtn').classList.add('hidden');
+    document.getElementById('lowerHandBtn').classList.remove('hidden');
+}
+
+function lowerHand() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!isHandRaised) return;
+
+    isHandRaised = false;
+    ws.send(JSON.stringify({ type: 'lower_hand' }));
+
+    document.getElementById('raiseHandBtn').classList.remove('hidden');
+    document.getElementById('lowerHandBtn').classList.add('hidden');
+}
+
+// ============================================================
+// MIC CONTROL (VAD) - hanya aktif kalau di-approve
+// ============================================================
+async function toggleMic() {
+    if (!isApproved) {
+        toast('You need Host approval to speak', 'error');
+        return;
+    }
+
+    if (isRecording) {
+        await stopMic();
+    } else {
+        await startMic();
+    }
+}
+
+async function startMic() {
+    try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true }
+        });
+
+        audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(micStream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+
+        isRecording = true;
+        document.getElementById('micBtn').textContent = '🔇 Turn Off Mic';
+        document.getElementById('micBtn').className = 'btn btn-danger';
+
+        startVADLoop();
+        toast('🎙️ Mic is on. Speak now.', 'success');
+    } catch (err) {
+        toast('Cannot access microphone: ' + err.message, 'error');
+    }
+}
+
+async function stopMic() {
+    isRecording = false;
+    if (vadCheckInterval) clearInterval(vadCheckInterval);
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+    if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+        micStream = null;
+    }
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+    }
+
+    document.getElementById('micBtn').textContent = '🎙️ Turn On Mic';
+    document.getElementById('micBtn').className = 'btn btn-success';
+
+    // Kirim sisa buffer
+    if (audioChunks.length > 0) {
+        await sendChunk();
+    }
+}
+
+function startVADLoop() {
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    vadCheckInterval = setInterval(() => {
+        if (!isRecording || !analyser) return;
+        analyser.getByteTimeDomainData(dataArray);
+
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            const v = (dataArray[i] - 128) / 128;
+            sum += v * v;
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+        const now = Date.now();
+
+        if (rms > VAD_THRESHOLD) {
+            if (!chunkStartTime) {
+                chunkStartTime = now;
+                startRecording();
+            }
+            silenceStart = null;
+
+            if (now - chunkStartTime > MAX_CHUNK_DURATION) {
+                finishAndSendChunk();
+            }
+        } else {
+            if (chunkStartTime && !silenceStart) {
+                silenceStart = now;
+            } else if (silenceStart && (now - silenceStart) > SILENCE_DURATION) {
+                finishAndSendChunk();
+            }
+        }
+    }, 50);
+}
+
+function startRecording() {
+    const options = { mimeType: 'audio/webm;codecs=opus' };
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options.mimeType = 'audio/webm';
+    }
+
+    mediaRecorder = new MediaRecorder(micStream, options);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.start(100);
+}
+
+async function finishAndSendChunk() {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+
+    const duration = Date.now() - (chunkStartTime || Date.now());
+    const mr = mediaRecorder;
+
+    await new Promise(resolve => {
+        mr.onstop = resolve;
+        mr.stop();
+    });
+
+    chunkStartTime = null;
+    silenceStart = null;
+
+    if (duration < MIN_CHUNK_DURATION) {
+        audioChunks = [];
+        return;
+    }
+
+    if (audioChunks.length > 0) {
+        await sendChunk();
+    }
+}
+
+async function sendChunk() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    const arrayBuffer = await blob.arrayBuffer();
+
+    ws.send(arrayBuffer);
+}
+
+function stopSpeaking() {
+    if (isRecording) {
+        stopMic();
+    }
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'audience_mic_off' }));
+    }
+}
+
+// ============================================================
+// UI
+// ============================================================
+function setStatus(text, type) {
+    const el = document.getElementById('statusDisplay');
+    el.textContent = text;
+    el.className = `status status-${type}`;
+}
+
+function renderHistory(history) {
+    const log = document.getElementById('log');
+    log.innerHTML = '';
+
+    history.forEach(entry => {
+        addTranscript({
+            timestamp: entry.timestamp,
+            original_text: entry.original_text,
+            translated_text: entry.translated_text,
+            speaker: entry.speaker,
+            lang: userLang,
+        }, false);
+    });
+
+    log.scrollTop = log.scrollHeight;
+}
+
+function addTranscript(msg, animate = true) {
+    const log = document.getElementById('log');
+    if (log.querySelector('.empty')) log.innerHTML = '';
+
+    const div = document.createElement('div');
+    div.className = 'transcript';
+    if (!animate) div.style.animation = 'none';
+
+    const ts = new Date(msg.timestamp).toLocaleTimeString('en-US');
+    const speaker = msg.speaker || 'Host';
+
+    div.innerHTML = `
+        <div class="ts">${ts} <span class="speaker-badge">🎙️ ${escapeHtml(speaker)}</span></div>
+        <div class="orig">"${escapeHtml(msg.original_text)}"</div>
+        <div class="trans">
+            <span class="lang-tag">${userLang.toUpperCase()}</span>
+            ${escapeHtml(msg.translated_text || '')}
+        </div>
+    `;
+
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+
+    // Batasi 200 entries
+    while (log.children.length > 200) {
+        log.removeChild(log.firstChild);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
+function downloadHistory() {
+    window.open(`/api/rooms/${roomCode}/export?format=txt`, '_blank');
+}
+
+function toast(message, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+}
+
+// ============================================================
+// START
+// ============================================================
+init();
+</script>
+</body>
+</html>

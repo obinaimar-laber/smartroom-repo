@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Room - Video Translate</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+            color: #1f2937;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 24px; margin-bottom: 20px; color: #1f2937; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .hidden { display: none !important; }
+
+        .btn {
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover:not(:disabled) { background: #059669; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        .btn-secondary:hover:not(:disabled) { background: #d1d5db; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        input[type="text"], select {
+            padding: 10px 14px;
+            font-size: 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            width: 100%;
+            font-family: inherit;
+        }
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f9fafb;
+        }
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+        .upload-area .icon { font-size: 48px; margin-bottom: 12px; }
+        .upload-area .title { font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+        .upload-area .subtitle { font-size: 13px; color: #6b7280; }
+        .upload-area input[type="file"] { display: none; }
+
+        .file-info {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .progress-container {
+            background: #e5e7eb;
+            border-radius: 8px;
+            height: 24px;
+            overflow: hidden;
+            margin: 12px 0;
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-extracting { background: #dbeafe; color: #1e40af; }
+        .status-transcribing { background: #e0e7ff; color: #3730a3; animation: pulse 1.5s infinite; }
+        .status-finalizing { background: #fce7f3; color: #9f1239; animation: pulse 1.5s infinite; }
+        .status-done { background: #d1fae5; color: #065f46; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .job-item {
+            background: #f9fafb;
+            border-left: 4px solid #2563eb;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .job-item.done { border-left-color: #10b981; }
+        .job-item.error { border-left-color: #dc2626; }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .job-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1f2937;
+            word-break: break-all;
+        }
+        .job-meta {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        .job-message {
+            font-size: 13px;
+            color: #4b5563;
+            margin: 8px 0;
+        }
+        .job-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .empty {
+            color: #9ca3af;
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: #1f2937;
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            animation: slideIn 0.3s;
+            max-width: 320px;
+        }
+        .toast.error { background: #dc2626; }
+        .toast.success { background: #10b981; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #92400e;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎬 Video Translate</h1>
+
+    <div class="note">
+        ℹ️ <b>How it works:</b> Upload a video → system extracts audio → transcribes (Whisper) → translates (NLLB). Result available for 1 hour after processing.
+    </div>
+
+    <!-- ==================== TABS ==================== -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('upload')" id="tabUpload">📤 Upload</div>
+        <div class="tab" onclick="switchTab('jobs')" id="tabJobs">
+            📋 Jobs (<span id="jobCount">0</span>)
+        </div>
+    </div>
+
+    <!-- ==================== TAB: UPLOAD ==================== -->
+    <div id="uploadTab">
+        <div class="card">
+            <h2 style="font-size: 18px; margin-bottom: 16px;">Upload Video</h2>
+
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('videoFile').click()">
+                <div class="icon">🎥</div>
+                <div class="title">Click to upload or drag & drop</div>
+                <div class="subtitle">MP4, MKV, AVI, MOV, WEBM · Max 1 GB · Max 3 hours</div>
+                <input type="file" id="videoFile" accept="video/*,audio/*" onchange="onFileSelected(event)">
+            </div>
+
+            <div class="file-info hidden" id="fileInfo">
+                <b>Selected:</b> <span id="fileName">-</span>
+                <span id="fileSize" style="color: #6b7280;"></span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+                <div class="form-group">
+                    <label for="sourceLang">Source Language (in video)</label>
+                    <select id="sourceLang">
+                        <option value="ru">🇷🇺 Russian</option>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="id">🇮🇩 Indonesia</option>
+                        <option value="zh">🇨🇳 Chinese</option>
+                        <option value="es">🇪🇸 Spanish</option>
+                        <option value="fa">🇮🇷 Persian</option>
+                        <option value="vi">🇻🇳 Vietnamese</option>
+                        <option value="bn">🇧🇩 Bengali</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="targetLang">Target Language (translate to)</label>
+                    <select id="targetLang">
+                        <option value="id">🇮🇩 Indonesia</option>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="ru">🇷🇺 Russian</option>
+                        <option value="zh">🇨🇳 Chinese</option>
+                        <option value="es">🇪🇸 Spanish</option>
+                        <option value="fa">🇮🇷 Persian</option>
+                        <option value="vi">🇻🇳 Vietnamese</option>
+                        <option value="bn">🇧🇩 Bengali</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="uploadBtn" onclick="uploadVideo()" style="width: 100%;" disabled>
+                🚀 Upload & Translate
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== TAB: JOBS ==================== -->
+    <div id="jobsTab" class="hidden">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="font-size: 18px;">Translation Jobs</h2>
+                <button class="btn btn-secondary btn-sm" onclick="loadJobs()">🔄 Refresh</button>
+            </div>
+
+            <div id="jobsList">
+                <div class="empty">No jobs yet. Upload a video to get started.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+let selectedFile = null;
+let pollingIntervals = {};  // {job_id: intervalId}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Setup drag & drop
+    const uploadArea = document.getElementById('uploadArea');
+    ['dragenter', 'dragover'].forEach(evt => {
+        uploadArea.addEventListener(evt, (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+        uploadArea.addEventListener(evt, (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+        });
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            document.getElementById('videoFile').files = files;
+            onFileSelected({ target: { files } });
+        }
+    });
+
+    loadJobs();
+
+    // Auto-refresh job list every 5s
+    setInterval(loadJobs, 5000);
+});
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+    document.getElementById('tabUpload').classList.toggle('active', tab === 'upload');
+    document.getElementById('tabJobs').classList.toggle('active', tab === 'jobs');
+    document.getElementById('uploadTab').classList.toggle('hidden', tab !== 'upload');
+    document.getElementById('jobsTab').classList.toggle('hidden', tab !== 'jobs');
+
+    if (tab === 'jobs') {
+        loadJobs();
+    }
+}
+
+// ============================================================
+// FILE SELECTION
+// ============================================================
+function onFileSelected(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validasi ukuran (max 1 GB)
+    const maxSize = 1024 * 1024 * 1024;
+    if (file.size > maxSize) {
+        toast(`File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB (max 1024 MB)`, 'error');
+        return;
+    }
+
+    selectedFile = file;
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = `(${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+    document.getElementById('fileInfo').classList.remove('hidden');
+    document.getElementById('uploadBtn').disabled = false;
+}
+
+// ============================================================
+// UPLOAD VIDEO
+// ============================================================
+async function uploadVideo() {
+    if (!selectedFile) {
+        toast('Please select a video first', 'error');
+        return;
+    }
+
+    const sourceLang = document.getElementById('sourceLang').value;
+    const targetLang = document.getElementById('targetLang').value;
+
+    if (sourceLang === targetLang) {
+        toast('Source and target language cannot be the same', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Uploading...';
+
+    const formData = new FormData();
+    formData.append('video', selectedFile);
+    formData.append('source_lang', sourceLang);
+    formData.append('target_lang', targetLang);
+
+    try {
+        const res = await fetch('/api/video/upload', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.detail || 'Upload failed');
+        }
+
+        toast(`✅ Upload complete! Job: ${data.job_id}`, 'success');
+
+        // Reset form
+        selectedFile = null;
+        document.getElementById('videoFile').value = '';
+        document.getElementById('fileInfo').classList.add('hidden');
+        btn.textContent = '🚀 Upload & Translate';
+        btn.disabled = true;
+
+        // Pindah ke tab jobs
+        switchTab('jobs');
+
+    } catch (e) {
+        toast('❌ ' + e.message, 'error');
+        btn.textContent = '🚀 Upload & Translate';
+        btn.disabled = false;
+    }
+}
+
+// ============================================================
+// LOAD JOBS LIST
+// ============================================================
+async function loadJobs() {
+    try {
+        const res = await fetch('/api/video/jobs');
+        const data = await res.json();
+        const jobs = data.jobs || [];
+
+        document.getElementById('jobCount').textContent = jobs.length;
+
+        const list = document.getElementById('jobsList');
+
+        if (jobs.length === 0) {
+            list.innerHTML = '<div class="empty">No jobs yet. Upload a video to get started.</div>';
+            return;
+        }
+
+        list.innerHTML = jobs.map(job => renderJob(job)).join('');
+
+        // Setup polling untuk job yang masih processing
+        jobs.forEach(job => {
+            if (['pending', 'extracting', 'transcribing', 'finalizing'].includes(job.status)) {
+                if (!pollingIntervals[job.job_id]) {
+                    pollingIntervals[job.job_id] = setInterval(() => {
+                        // Polling sudah dihandle oleh loadJobs() global
+                    }, 3000);
+                }
+            } else {
+                // Stop polling kalau job selesai
+                if (pollingIntervals[job.job_id]) {
+                    clearInterval(pollingIntervals[job.job_id]);
+                    delete pollingIntervals[job.job_id];
+                }
+            }
+        });
+
+    } catch (e) {
+        console.error('Failed to load jobs:', e);
+    }
+}
+
+function renderJob(job) {
+    const statusClass = `status-${job.status}`;
+    const jobClass = job.status === 'done' ? 'done' : (job.status === 'error' ? 'error' : '');
+
+    const createdDate = new Date(job.created_at).toLocaleString('en-US');
+
+    let actions = '';
+    if (job.status === 'done') {
+        actions = `
+            <button class="btn btn-success btn-sm" onclick="downloadJob('${job.job_id}', 'txt')">📥 TXT</button>
+            <button class="btn btn-success btn-sm" onclick="downloadJob('${job.job_id}', 'json')">📥 JSON</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteJob('${job.job_id}')">🗑️ Delete</button>
+        `;
+    } else if (job.status === 'error') {
+        actions = `
+            <button class="btn btn-danger btn-sm" onclick="deleteJob('${job.job_id}')">🗑️ Delete</button>
+        `;
+    } else {
+        // Processing
+        actions = `
+            <button class="btn btn-secondary btn-sm" disabled>⏳ Processing...</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteJob('${job.job_id}')">🗑️ Cancel</button>
+        `;
+    }
+
+    const progressHtml = (['pending', 'extracting', 'transcribing', 'finalizing'].includes(job.status))
+        ? `
+            <div class="progress-container">
+                <div class="progress-bar" style="width: ${job.progress}%;">
+                    ${job.progress}%
+                </div>
+            </div>
+        `
+        : '';
+
+    return `
+        <div class="job-item ${jobClass}">
+            <div class="job-header">
+                <div>
+                    <div class="job-title">📹 ${escapeHtml(job.filename)}</div>
+                    <div class="job-meta">
+                        <span class="status-badge ${statusClass}">${job.status.toUpperCase()}</span>
+                        · ${job.source_lang.toUpperCase()} → ${job.target_lang.toUpperCase()}
+                        · ${createdDate}
+                    </div>
+                </div>
+            </div>
+
+            ${progressHtml}
+
+            <div class="job-message">${escapeHtml(job.message || '')}</div>
+
+            <div class="job-actions">
+                ${actions}
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================
+// DOWNLOAD & DELETE
+// ============================================================
+function downloadJob(jobId, format) {
+    window.open(`/api/video/download/${jobId}?format=${format}`, '_blank');
+}
+
+async function deleteJob(jobId) {
+    if (!confirm('Delete this job? All files will be removed.')) return;
+
+    try {
+        const res = await fetch(`/api/video/delete/${jobId}`, { method: 'DELETE' });
+
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.detail || 'Delete failed');
+        }
+
+        toast('🗑️ Job deleted', 'success');
+        loadJobs();
+    } catch (e) {
+        toast('❌ ' + e.message, 'error');
+    }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
+function toast(message, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+}
+</script>
+</body>
+</html>
