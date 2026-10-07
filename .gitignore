@@ -64,3 +64,8 @@ desktop.ini
 *.zip
 *.rar
 backup_*.json
+
+# ---------- Sphinx Documentation ----------
+docs/_build/
+docs/_autosummary/
+*.pyc
